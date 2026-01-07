@@ -1,0 +1,8 @@
+# Directory di build
+build/
+
+# File oggetto
+*.o
+
+# Eseguibili
+yahtzee

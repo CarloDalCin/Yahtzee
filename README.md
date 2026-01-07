@@ -1,0 +1,2 @@
+# Yahtzee
+Terminal yahtzee game

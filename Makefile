@@ -1,4 +1,5 @@
 CC = gcc
+LINK = -lncurses
 CFLAGS = -Wall -g
 
 BUILD_DIR = build
@@ -11,7 +12,7 @@ all: build $(BIN)
 
 # Link finale
 $(BIN): $(OBJ)
-	$(CC) $(CFLAGS) -o $(BIN) $(OBJ)
+	$(CC) $(CFLAGS) $(LINK) -o $(BIN) $(OBJ)
 
 # Compilazione dei file .c in build/obj
 $(OBJ_DIR)/main.o: main.c yahtzee.h

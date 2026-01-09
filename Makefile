@@ -6,7 +6,7 @@ BUILD_DIR = build
 OBJ_DIR = $(BUILD_DIR)/obj
 BIN = $(BUILD_DIR)/yahtzee
 
-OBJ = $(OBJ_DIR)/main.o $(OBJ_DIR)/yahtzee.o
+OBJ = $(OBJ_DIR)/main.o $(OBJ_DIR)/yahtzee.o $(OBJ_DIR)/ui.o
 
 all: build $(BIN)
 
@@ -20,6 +20,9 @@ $(OBJ_DIR)/main.o: main.c yahtzee.h
 
 $(OBJ_DIR)/yahtzee.o: yahtzee.c yahtzee.h
 	$(CC) $(CFLAGS) -c yahtzee.c -o $(OBJ_DIR)/yahtzee.o
+
+$(OBJ_DIR)/ui.o: ui.c ui.h
+	$(CC) $(CFLAGS) -c ui.c -o $(OBJ_DIR)/ui.o
 
 # Creazione directory
 build:

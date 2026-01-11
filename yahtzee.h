@@ -8,6 +8,7 @@
 #include <time.h>
 
 #define NUM_DICES 5
+#define NUM_FACES_DICE 6
 #define NUM_PLAYERS 2
 #define NUM_ATTEMPTS 3
 #define FULL_HOUSE_VALUE 25
@@ -76,23 +77,24 @@ typedef struct {
 
 /* ---------- Functions ---------- */
 
-void init_yahtzee(yahtzee_t *y);
-void draw_menu(const yahtzee_t *y);
-void draw_yahtzee(const yahtzee_t *y);
-void free_yahtzee(void);
+void yahtzee_init(yahtzee_t *y);
+void yahtzee_draw(const yahtzee_t *y);
+void yahtzee_free(void);
 
 /* ---------- Utils ---------- */
 
-void launch_dices(yahtzee_t *y);
-void change_turn(yahtzee_t *y);
-void pause_game(yahtzee_t *y);
+void yahtzee_roll_dices(yahtzee_t *y);
+void yahtzee_hold_dice(bool *dice_s);
+void yahtzee_release_dice(bool *dice_s);
+void yahtzee_change_turn(yahtzee_t *y);
+void yahtzee_pause_game(yahtzee_t *y);
 
 // puts the value of a specific combination (obtained from the dices) in the
 // scorecard
-selection_status select_upper_combination(upper_section combination,
-                                          yahtzee_t *y);
-selection_status select_lower_combination(lower_section combination,
-                                          yahtzee_t *y);
-bool is_there_unselected_combination(scorecard_t *card);
+selection_status yahtzee_select_upper_combination(upper_section combination,
+                                                  yahtzee_t *y);
+selection_status yahtzee_select_lower_combination(lower_section combination,
+                                                  yahtzee_t *y);
+bool yahtzee_is_there_unselected_combination(const scorecard_t *card);
 
 #endif // YAHTZEE_H

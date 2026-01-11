@@ -20,8 +20,6 @@ typedef enum { UNSELECTED, SELECTED } selection_status;
 
 typedef enum { STOP, PLAY, MENU } game_state;
 
-typedef enum { NONE, JOKER } joker_state;
-
 /* ---------- Point Section ---------- */
 
 typedef enum {
@@ -74,7 +72,6 @@ typedef struct {
   uint8_t attempts;      // attempts left on a turn
   uint8_t active_player; // 0: player 1, 1: player 2
   game_state state;
-  joker_state joker;
 } yahtzee_t;
 
 /* ---------- Functions ---------- */

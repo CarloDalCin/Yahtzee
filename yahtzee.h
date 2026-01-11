@@ -8,6 +8,19 @@
 #include <time.h>
 
 #define NUM_DICES 5
+#define NUM_PLAYERS 2
+#define NUM_ATTEMPTS 3
+#define FULL_HOUSE_VALUE 25
+#define SMALL_STRAIGHT_VALUE 30
+#define LARGE_STRAIGHT_VALUE 40
+#define YAHTZEE_VALUE 50
+#define YAHTZEE_BONUS_VALUE 100
+
+typedef enum { UNSELECTED, SELECTED } selection_status;
+
+typedef enum { STOP, PLAY, MENU } game_state;
+
+typedef enum { NONE, JOKER } joker_state;
 
 /* ---------- Point Section ---------- */
 
@@ -22,23 +35,25 @@ typedef enum {
 } upper_section;
 
 typedef enum {
+  CHANCE,
   THREE_OF_A_KIND,
   FOUR_OF_A_KIND,
   FULL_HOUSE,
   SMALL_STRAIGHT,
   LARGE_STRAIGHT,
-  CHANCE,
   YAHTZEE,
-  LOWER_SIZE
+  LOWER_SIZE,
 } lower_section;
 
 /* ---------- Game Struct ---------- */
 
 typedef struct {
+  struct {
+    uint8_t points;
+    bool selected;
+  } upper[UPPER_SIZE], lower[LOWER_SIZE];
+  uint8_t upper_bonus;    // 35 se >= 63
   uint16_t yahtzee_bonus; // max 1200
-  uint8_t upper[UPPER_SIZE];
-  uint8_t upper_bonus; // 35 se >= 63
-  uint8_t lower[LOWER_SIZE];
 } scorecard_t;
 
 typedef struct {
@@ -54,11 +69,12 @@ typedef struct {
 } dice_t;
 
 typedef struct {
-  player_t player[2];
+  player_t player[NUM_PLAYERS];
   dice_t dice[NUM_DICES];
-  uint8_t attempts;   // attempts left on a turn
-  bool active_player; // 0: player 1, 1: player 2
-  uint8_t runnig;     // 0: not running, 1: running
+  uint8_t attempts;      // attempts left on a turn
+  uint8_t active_player; // 0: player 1, 1: player 2
+  game_state state;
+  joker_state joker;
 } yahtzee_t;
 
 /* ---------- Functions ---------- */
@@ -71,14 +87,15 @@ void free_yahtzee(void);
 /* ---------- Utils ---------- */
 
 void launch_dices(yahtzee_t *y);
-void reset_attempts(yahtzee_t *y);
-void toggle_dice(dice_t *d);
 void change_turn(yahtzee_t *y);
 void pause_game(yahtzee_t *y);
 
 // puts the value of a specific combination (obtained from the dices) in the
 // scorecard
-void select_upper_combination(upper_section combination, yahtzee_t *y);
-void select_lower_combination(lower_section combination, yahtzee_t *y);
+selection_status select_upper_combination(upper_section combination,
+                                          yahtzee_t *y);
+selection_status select_lower_combination(lower_section combination,
+                                          yahtzee_t *y);
+bool is_there_unselected_combination(scorecard_t *card);
 
 #endif // YAHTZEE_H

@@ -1,5 +1,5 @@
 CC = gcc
-LINK = -lncurses
+LINK = -lpanel -lncurses
 CFLAGS = -Wall -g
 
 BUILD_DIR = build

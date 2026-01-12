@@ -3,42 +3,7 @@
 
 #define SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-void yahtzee_init(yahtzee_t *y) {
-  *y = (yahtzee_t){0};
-
-  /* init ncurses */
-  initscr();
-  noecho();
-  cbreak();
-  keypad(stdscr, TRUE);
-  curs_set(0); // nasconde il cursore
-}
-
-void yahtzee_draw(const yahtzee_t *y) {
-  clear();
-
-  /* Titolo */
-  mvprintw(1, 10, "YAHTZEE");
-
-  /* Info giocatore */
-  int p = y->active_player;
-  mvprintw(3, 2, "Player: %d", p + 1);
-  mvprintw(4, 2, "Attempts: %d", y->attempts);
-
-  /* Upper section */
-  mvprintw(6, 2, "Upper section:");
-  for (int i = 0; i < 6; i++) {
-    mvprintw(7 + i, 4, "%d: %d", i + 1, y->player[p].card.upper[i].points);
-  }
-
-  /* Lower section */
-  mvprintw(14, 2, "Lower section:");
-  for (int i = 0; i < 7; i++) {
-    mvprintw(15 + i, 4, "%d: %d", i + 1, y->player[p].card.lower[i].points);
-  }
-
-  refresh();
-}
+void yahtzee_init(yahtzee_t *y) { *y = (yahtzee_t){0}; }
 
 void yahtzee_free(void) {
   endwin(); // ripristina il terminale
@@ -85,7 +50,7 @@ void yahtzee_hold_dice(bool *dice_s) { *dice_s = SELECTED; }
 void yahtzee_release_dice(bool *dice_s) { *dice_s = UNSELECTED; }
 
 void yahtzee_change_turn(yahtzee_t *y) {
-  y->active_player = !y->active_player;
+  y->active_player = (y->active_player + 1) % NUM_PLAYERS;
   reset_dices(y->dice);
   reset_attempts(y);
 }

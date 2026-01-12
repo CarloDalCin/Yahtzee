@@ -78,7 +78,6 @@ typedef struct {
 /* ---------- Functions ---------- */
 
 void yahtzee_init(yahtzee_t *y);
-void yahtzee_draw(const yahtzee_t *y);
 void yahtzee_free(void);
 
 /* ---------- Utils ---------- */

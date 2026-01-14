@@ -3,12 +3,19 @@
 
 #define SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-void yahtzee_init(yahtzee_t *y) {
+yahtzee_t *yahtzee_init(void) {
+  yahtzee_t *y = malloc(sizeof(yahtzee_t));
   *y = (yahtzee_t){0};
 
   y->attempts = 3;
   y->active_player = 0;
-  y->state = PLAY;
+
+  return y;
+}
+
+void yahtzee_free(yahtzee_t **y) {
+  free(*y);
+  *y = NULL;
 }
 
 /* ---------- Utils ---------- */
@@ -56,8 +63,6 @@ void yahtzee_change_turn(yahtzee_t *y) {
   reset_dices(y->dice);
   reset_attempts(y);
 }
-
-void yahtzee_pause_game(yahtzee_t *y) { y->state = MENU; }
 
 /* ---------- Game logic ---------- */
 

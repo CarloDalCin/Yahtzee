@@ -41,7 +41,10 @@
 │   ROLL BUTTON              │
 └────────────────────────────┘
 **************************************/
+
 typedef enum { HELP, QUIT, MENU_OPTIONS_SIZE } menu_option;
+
+typedef enum { LANDSCAPE, PORTRAIT, LAYOUT_SIZE } layout;
 
 typedef struct {
   WINDOW *win;
@@ -68,9 +71,15 @@ typedef struct {
   scores_t scores;
 } layout_t;
 
-yahtzee_t *ui_init(void);
-void choose_appropriate_layout(void);
-void ui_draw(void);
-void ui_free(void);
+typedef struct {
+  layout_t layout[LAYOUT_SIZE];
+  layout_t *current_layout;
+  yahtzee_t *yahtzee;
+} ui_t;
+
+ui_t *ui_init(yahtzee_t *y);
+void choose_appropriate_layout(ui_t *ui);
+void ui_draw(ui_t *ui);
+void ui_free(ui_t **ui);
 
 #endif // UI_H

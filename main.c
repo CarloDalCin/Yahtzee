@@ -1,21 +1,17 @@
-#include "ui.h"
-#include "yahtzee.h"
-#include <ncurses.h>
+#include "game.h"
 
 int main(void) {
-  yahtzee_t *game = ui_init();
+  game_t *game = game_init();
 
   while (game->state != STOP) {
-    ui_draw();
 
-    int c = getch();
-    if (c == 'q')
+    game->input = getch();
+    if (game->input == 'q')
       game->state = STOP;
-    else if (c == KEY_RESIZE)
-      choose_appropriate_layout();
+    else if (game->input == KEY_RESIZE)
+      choose_appropriate_layout(game->ui);
   }
 
-  ui_free();
-
+  game_free(&game);
   return 0;
 }

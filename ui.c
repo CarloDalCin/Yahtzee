@@ -5,22 +5,20 @@
 #define MENU_OPTION_WIDTH 8
 #define MENU_OPTIONS_OFFSET(option) ((option) * MENU_OPTION_WIDTH)
 
-static layout_t landscape = {0}, portrait = {0};
-static layout_t *current_layout;
-static const yahtzee_t *yahtzee;
-
 // choose layout base on terminal size
-void choose_appropriate_layout(void) {
+void choose_appropriate_layout(ui_t *ui) {
   int rows, cols;
   getmaxyx(stdscr, rows, cols);
   if ((cols / 2) > rows) {
-    current_layout = &landscape;
+    ui->current_layout = &ui->layout[LANDSCAPE];
   } else {
-    current_layout = &portrait;
+    ui->current_layout = &ui->layout[PORTRAIT];
   }
 }
 
-static bool is_layout_active(layout_t *l) { return current_layout == l; }
+static bool is_layout_active(ui_t *ui, layout l) {
+  return ui->current_layout == &ui->layout[l];
+}
 
 static void change_player_tab(scores_t *s, int8_t view) {
   s->scorecard_view = view % NUM_PLAYERS;
@@ -101,8 +99,8 @@ bool is_mouse_inside_window(const WINDOW *win, int x, int y) {
 └─────────────────┴─────────┴──────────────────────────────┘
 **************************************/
 
-static void build_orizontal_layout(int rows, int cols) {
-  del_layout(&landscape);
+static void build_orizontal_layout(ui_t *ui, int rows, int cols) {
+  del_layout(&ui->layout[LANDSCAPE]);
 
   const int title_h = 3;
   const int menu_h = 3;
@@ -111,35 +109,40 @@ static void build_orizontal_layout(int rows, int cols) {
   const int left_w = cols / 2;
   const int right_w = cols - left_w;
 
-  landscape.title = newwin(title_h, left_w, 0, 0);
-  landscape.field.win = newwin(rows - title_h, left_w, title_h, 0);
+  ui->layout[LANDSCAPE].title = newwin(title_h, left_w, 0, 0);
+  ui->layout[LANDSCAPE].field.win = newwin(rows - title_h, left_w, title_h, 0);
 
-  landscape.scores.win = newwin(rows - menu_h, right_w, 0, left_w);
-  landscape.menu.win = newwin(menu_h, right_w, rows - menu_h, left_w);
+  ui->layout[LANDSCAPE].scores.win = newwin(rows - menu_h, right_w, 0, left_w);
+  ui->layout[LANDSCAPE].menu.win =
+      newwin(menu_h, right_w, rows - menu_h, left_w);
 
-  box(landscape.title, 0, 0);
-  box(landscape.field.win, 0, 0);
-  box(landscape.scores.win, 0, 0);
-  box(landscape.menu.win, 0, 0);
+  box(ui->layout[LANDSCAPE].title, 0, 0);
+  box(ui->layout[LANDSCAPE].field.win, 0, 0);
+  box(ui->layout[LANDSCAPE].scores.win, 0, 0);
+  box(ui->layout[LANDSCAPE].menu.win, 0, 0);
 
-  landscape.field.roll_button =
-      derwin(landscape.field.win, 3, 10, rows - title_h - 3, 0);
+  ui->layout[LANDSCAPE].field.roll_button =
+      derwin(ui->layout[LANDSCAPE].field.win, 3, 10, rows - title_h - 3, 0);
 
-  wborder(landscape.field.roll_button, 0, 0, 0, 0, ACS_LTEE, 0, 0, ACS_BTEE);
+  wborder(ui->layout[LANDSCAPE].field.roll_button, 0, 0, 0, 0, ACS_LTEE, 0, 0,
+          ACS_BTEE);
 
   for (int i = 0; i < MENU_OPTIONS_SIZE; ++i)
-    landscape.menu.section[i] =
-        derwin(landscape.menu.win, menu_h, MENU_OPTION_WIDTH, 0,
+    ui->layout[LANDSCAPE].menu.section[i] =
+        derwin(ui->layout[LANDSCAPE].menu.win, menu_h, MENU_OPTION_WIDTH, 0,
                6 + MENU_OPTIONS_OFFSET(i));
 
   for (int i = 0; i < NUM_PLAYERS; ++i)
-    landscape.scores.player_tab[i] = derwin(
-        landscape.scores.win, tab_h, PLAYER_TAB_WIDTH, 0, PLAYER_TAB_OFFSET(i));
+    ui->layout[LANDSCAPE].scores.player_tab[i] =
+        derwin(ui->layout[LANDSCAPE].scores.win, tab_h, PLAYER_TAB_WIDTH, 0,
+               PLAYER_TAB_OFFSET(i));
 
-  landscape.scores.scorecard =
-      derwin(landscape.scores.win, rows - tab_h - menu_h, right_w, tab_h, 0);
+  ui->layout[LANDSCAPE].scores.scorecard =
+      derwin(ui->layout[LANDSCAPE].scores.win, rows - tab_h - menu_h, right_w,
+             tab_h, 0);
 
-  wborder(landscape.scores.scorecard, 0, 0, 0, 0, ACS_LTEE, ACS_RTEE, 0, 0);
+  wborder(ui->layout[LANDSCAPE].scores.scorecard, 0, 0, 0, 0, ACS_LTEE,
+          ACS_RTEE, 0, 0);
 }
 
 // vertical layout
@@ -164,8 +167,8 @@ static void build_orizontal_layout(int rows, int cols) {
 │   ROLL BUTTON              │
 └────────────────────────────┘
 **************************************/
-static void build_vertical_layout(int rows, int cols) {
-  del_layout(&portrait);
+static void build_vertical_layout(ui_t *ui, int rows, int cols) {
+  del_layout(&ui->layout[PORTRAIT]);
 
   const int title_h = 3;
   const int menu_h = 3;
@@ -175,90 +178,96 @@ static void build_vertical_layout(int rows, int cols) {
   int y = 0;
 
   /* TITLE */
-  portrait.title = newwin(title_h, cols, y, 0);
+  ui->layout[PORTRAIT].title = newwin(title_h, cols, y, 0);
   y += title_h;
 
   /* MENU */
-  portrait.menu.win = newwin(menu_h, cols, y, 0);
+  ui->layout[PORTRAIT].menu.win = newwin(menu_h, cols, y, 0);
   y += menu_h;
 
   int field_h = rows - (title_h + menu_h + tab_h + roll_h + 3);
-  portrait.field.win = newwin(field_h, cols, y, 0);
+  ui->layout[PORTRAIT].field.win = newwin(field_h, cols, y, 0);
   y += field_h;
 
-  portrait.scores.win = newwin(tab_h + (rows - y - roll_h), cols, y, 0);
+  ui->layout[PORTRAIT].scores.win =
+      newwin(tab_h + (rows - y - roll_h), cols, y, 0);
 
   /* PLAYER TABS */
   for (int i = 0; i < NUM_PLAYERS; ++i)
-    portrait.scores.player_tab[i] =
-        derwin(portrait.scores.win, tab_h, 16, 0, i * 16);
+    ui->layout[PORTRAIT].scores.player_tab[i] =
+        derwin(ui->layout[PORTRAIT].scores.win, tab_h, 16, 0, i * 16);
 
-  portrait.scores.scorecard =
-      derwin(portrait.scores.win, getmaxy(portrait.scores.win) - tab_h, cols,
-             tab_h, 0);
+  ui->layout[PORTRAIT].scores.scorecard =
+      derwin(ui->layout[PORTRAIT].scores.win,
+             getmaxy(ui->layout[PORTRAIT].scores.win) - tab_h, cols, tab_h, 0);
 
-  y += getmaxy(portrait.scores.win);
+  y += getmaxy(ui->layout[PORTRAIT].scores.win);
 
-  portrait.field.roll_button = newwin(roll_h, cols, rows - roll_h, 0);
+  ui->layout[PORTRAIT].field.roll_button =
+      newwin(roll_h, cols, rows - roll_h, 0);
 
   /* BOX */
-  box(portrait.title, 0, 0);
-  box(portrait.menu.win, 0, 0);
-  box(portrait.field.win, 0, 0);
-  box(portrait.scores.win, 0, 0);
-  box(portrait.field.roll_button, 0, 0);
+  box(ui->layout[PORTRAIT].title, 0, 0);
+  box(ui->layout[PORTRAIT].menu.win, 0, 0);
+  box(ui->layout[PORTRAIT].field.win, 0, 0);
+  box(ui->layout[PORTRAIT].scores.win, 0, 0);
+  box(ui->layout[PORTRAIT].field.roll_button, 0, 0);
 
   /* MENU SECTIONS */
   for (int i = 0; i < MENU_OPTIONS_SIZE; ++i)
-    portrait.menu.section[i] =
-        derwin(portrait.menu.win, menu_h, cols / MENU_OPTIONS_SIZE, 0,
-               i * (cols / MENU_OPTIONS_SIZE));
+    ui->layout[PORTRAIT].menu.section[i] =
+        derwin(ui->layout[PORTRAIT].menu.win, menu_h, cols / MENU_OPTIONS_SIZE,
+               0, i * (cols / MENU_OPTIONS_SIZE));
 }
 
-static void draw_layout(void) {
-  mvwprintw(current_layout->title, 1, 2, "Yahtzee");
+static void draw_layout(ui_t *ui) {
+  mvwprintw(ui->current_layout->title, 1, 2, "Yahtzee");
 
-  mvwprintw(current_layout->field.roll_button, 1, 1, "Roll (%d)",
-            yahtzee->attempts);
+  mvwprintw(ui->current_layout->field.roll_button, 1, 1, "Roll (%d)",
+            ui->yahtzee->attempts);
 
-  mvwprintw(current_layout->menu.win, 1, 1, "Menu: ");
+  mvwprintw(ui->current_layout->menu.win, 1, 1, "Menu: ");
   for (int i = 0; i < MENU_OPTIONS_SIZE; ++i)
-    mvwprintw(current_layout->menu.section[i], 1, 1, "%s", menu_option_name(i));
+    mvwprintw(ui->current_layout->menu.section[i], 1, 1, "%s",
+              menu_option_name(i));
 
   for (int i = 0; i < NUM_PLAYERS; ++i)
-    mvwprintw(current_layout->scores.player_tab[i], 1, 1, "Player %d", i + 1);
+    mvwprintw(ui->current_layout->scores.player_tab[i], 1, 1, "Player %d",
+              i + 1);
 }
 
-static void build_layout(int rows, int cols) {
-  if (is_layout_active(&landscape)) {
-    build_orizontal_layout(rows, cols);
-  } else if (is_layout_active(&portrait)) {
-    build_vertical_layout(rows, cols);
+static void build_layout(ui_t *ui, int rows, int cols) {
+  if (is_layout_active(ui, LANDSCAPE)) {
+    build_orizontal_layout(ui, rows, cols);
+  } else if (is_layout_active(ui, PORTRAIT)) {
+    build_vertical_layout(ui, rows, cols);
   }
 }
 
-static void refresh_layout(void) {
-  wnoutrefresh(current_layout->title);
-  wnoutrefresh(current_layout->field.win);
-  wnoutrefresh(current_layout->field.roll_button);
-  wnoutrefresh(current_layout->menu.win);
-  wnoutrefresh(current_layout->scores.win);
+static void refresh_layout(ui_t *ui) {
+  wnoutrefresh(ui->current_layout->title);
+  wnoutrefresh(ui->current_layout->field.win);
+  wnoutrefresh(ui->current_layout->field.roll_button);
+  wnoutrefresh(ui->current_layout->menu.win);
+  wnoutrefresh(ui->current_layout->scores.win);
 
   for (int i = 0; i < NUM_PLAYERS; ++i)
-    wnoutrefresh(current_layout->scores.player_tab[i]);
+    wnoutrefresh(ui->current_layout->scores.player_tab[i]);
 
-  wnoutrefresh(current_layout->scores.scorecard);
+  wnoutrefresh(ui->current_layout->scores.scorecard);
 
   for (int i = 0; i < MENU_OPTIONS_SIZE; ++i)
-    wnoutrefresh(current_layout->menu.section[i]);
+    wnoutrefresh(ui->current_layout->menu.section[i]);
 
   doupdate();
 }
 
-yahtzee_t *ui_init(void) {
-  yahtzee_t *y = malloc(sizeof(yahtzee_t));
-  yahtzee_init(y);
-  yahtzee = y;
+ui_t *ui_init(yahtzee_t *y) {
+  ui_t *ui = malloc(sizeof(ui_t));
+
+  ui->yahtzee = y;
+  ui->layout[LANDSCAPE] = (layout_t){0};
+  ui->layout[PORTRAIT] = (layout_t){0};
 
   // initializetions ncurses
   initscr();
@@ -268,7 +277,7 @@ yahtzee_t *ui_init(void) {
   curs_set(0);
   mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 
-  choose_appropriate_layout();
+  choose_appropriate_layout(ui);
 
   if (has_colors()) {
     start_color();
@@ -277,21 +286,23 @@ yahtzee_t *ui_init(void) {
 
   refresh();
 
-  return y;
+  return ui;
 }
 
-void ui_draw(void) {
+void ui_draw(ui_t *ui) {
   int rows, cols;
   getmaxyx(stdscr, rows, cols);
 
-  build_layout(rows, cols);
-  draw_layout();
-  refresh_layout();
+  build_layout(ui, rows, cols);
+  draw_layout(ui);
+  refresh_layout(ui);
 }
 
-void ui_free(void) {
-  del_layout(&landscape);
-  del_layout(&portrait);
+void ui_free(ui_t **ui) {
+  del_layout(&(*ui)->layout[LANDSCAPE]);
+  del_layout(&(*ui)->layout[PORTRAIT]);
 
   endwin();
+  free(*ui);
+  *ui = NULL;
 }

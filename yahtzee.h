@@ -19,8 +19,6 @@
 
 typedef enum { UNSELECTED, SELECTED } selection_status;
 
-typedef enum { STOP, PLAY, MENU } game_state;
-
 /* ---------- Point Section ---------- */
 
 typedef enum {
@@ -72,12 +70,12 @@ typedef struct {
   dice_t dice[NUM_DICES];
   uint8_t attempts;      // attempts left on a turn
   uint8_t active_player; // 0: player 1, 1: player 2
-  game_state state;
 } yahtzee_t;
 
 /* ---------- Functions ---------- */
 
-void yahtzee_init(yahtzee_t *y);
+yahtzee_t *yahtzee_init(void);
+void yahtzee_free(yahtzee_t **y);
 
 /* ---------- Utils ---------- */
 
@@ -85,7 +83,6 @@ void yahtzee_roll_dices(yahtzee_t *y);
 void yahtzee_hold_dice(bool *dice_s);
 void yahtzee_release_dice(bool *dice_s);
 void yahtzee_change_turn(yahtzee_t *y);
-void yahtzee_pause_game(yahtzee_t *y);
 
 // puts the value of a specific combination (obtained from the dices) in the
 // scorecard

@@ -3,10 +3,12 @@
 
 #define SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-void yahtzee_init(yahtzee_t *y) { *y = (yahtzee_t){0}; }
+void yahtzee_init(yahtzee_t *y) {
+  *y = (yahtzee_t){0};
 
-void yahtzee_free(void) {
-  endwin(); // ripristina il terminale
+  y->attempts = 3;
+  y->active_player = 0;
+  y->state = PLAY;
 }
 
 /* ---------- Utils ---------- */

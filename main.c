@@ -3,22 +3,19 @@
 #include <ncurses.h>
 
 int main(void) {
-  yahtzee_t game;
+  yahtzee_t *game = ui_init();
 
-  yahtzee_init(&game);
-
-  game.attempts = 3;
-  game.active_player = 0;
-
-  ui_init(&game);
-  while (game.state != STOP) {
+  while (game->state != STOP) {
     ui_draw();
 
     int c = getch();
     if (c == 'q')
-      game.state = STOP;
+      game->state = STOP;
+    else if (c == KEY_RESIZE)
+      choose_appropriate_layout();
   }
 
-  yahtzee_free();
+  ui_free();
+
   return 0;
 }

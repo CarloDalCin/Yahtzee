@@ -19,6 +19,28 @@
 └─────────────────┴─────────┴──────────────────────────────┘
 **************************************/
 
+// vertical layout
+/*************** LAYOUT ***************
+┌────────────────────────────┐
+│        TITLE               │
+├────────────────────────────┤
+│          MENU              │
+├────────────────────────────┤
+│       (FIELD)              │
+│        DADI                │
+│                            │
+│                            │
+├────────────────────────────┤
+│   SCORECARD (Player tab)   │
+├────────────────────────────┤
+│                            │
+│   SCORECARD (Points)       │
+│                            │
+│                            │
+├────────────────────────────┤
+│   ROLL BUTTON              │
+└────────────────────────────┘
+**************************************/
 typedef enum { HELP, QUIT, MENU_OPTIONS_SIZE } menu_option;
 
 typedef struct {
@@ -46,7 +68,8 @@ typedef struct {
   scores_t scores;
 } layout_t;
 
-void ui_init(const yahtzee_t *yahtzee);
+yahtzee_t *ui_init(void);
+void choose_appropriate_layout(void);
 void ui_draw(void);
 void ui_free(void);
 

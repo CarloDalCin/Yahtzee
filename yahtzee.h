@@ -1,7 +1,7 @@
+// yahtzee lib that contain the logic of the game
 #ifndef YAHTZEE_H
 #define YAHTZEE_H
 
-#include <ncurses.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -83,6 +83,7 @@ void yahtzee_roll_dices(yahtzee_t *y);
 void yahtzee_hold_dice(bool *dice_s);
 void yahtzee_release_dice(bool *dice_s);
 void yahtzee_change_turn(yahtzee_t *y);
+bool yahtzee_end_game(yahtzee_t *y);
 
 // puts the value of a specific combination (obtained from the dices) in the
 // scorecard
@@ -90,6 +91,8 @@ selection_status yahtzee_select_upper_combination(upper_section combination,
                                                   yahtzee_t *y);
 selection_status yahtzee_select_lower_combination(lower_section combination,
                                                   yahtzee_t *y);
+bool yahtzee_is_there_unselected_upper_combination(const scorecard_t *card);
+bool yahtzee_is_there_unselected_lower_combination(const scorecard_t *card);
 bool yahtzee_is_there_unselected_combination(const scorecard_t *card);
 
 #endif // YAHTZEE_H

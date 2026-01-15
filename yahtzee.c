@@ -158,8 +158,26 @@ static int get_yahtzee(const dice_t *d) {
   return 0;
 }
 
+static int get_total_score(const scorecard_t *card) {
+  int total = 0;
+  for (int i = 0; i < UPPER_SIZE; ++i)
+    total += card->upper[i].points;
+  for (int i = 0; i < LOWER_SIZE; ++i)
+    total += card->lower[i].points;
+  return total;
+}
+
+bool yahtzee_end_game(yahtzee_t *y) {
+  if (yahtzee_is_there_unselected_combination(
+          &y->player[y->active_player].card))
+    return false;
+  y->player[y->active_player].total_score =
+      get_total_score(&y->player[y->active_player].card);
+  return true;
+}
+
 // return true if there is at least one unselected upper combination
-static bool is_there_unselected_upper_combination(const scorecard_t *card) {
+bool yahtzee_is_there_unselected_upper_combination(const scorecard_t *card) {
   for (int i = 0; i < UPPER_SIZE; ++i) {
     if (!card->upper[i].selected) {
       return true;
@@ -168,7 +186,7 @@ static bool is_there_unselected_upper_combination(const scorecard_t *card) {
   return false;
 }
 
-static bool is_there_unselected_lower_combination(const scorecard_t *card) {
+bool yahtzee_is_there_unselected_lower_combination(const scorecard_t *card) {
   for (int i = 0; i < LOWER_SIZE; ++i) {
     if (!card->lower[i].selected) {
       return true;
@@ -214,7 +232,7 @@ selection_status yahtzee_select_lower_combination(lower_section combination,
   dice_t *d = y->dice;
 
   bool s = is_joker(y); // state of the joker
-  if (s && is_there_unselected_upper_combination(card))
+  if (s && yahtzee_is_there_unselected_upper_combination(card))
     return UNSELECTED;
   if (!card->lower[combination].selected) {
     switch (combination) {
@@ -240,7 +258,6 @@ selection_status yahtzee_select_lower_combination(lower_section combination,
       *points = get_yahtzee(d);
       break;
     default:
-      fprintf(stderr, "Unknown lower combination\n");
       break;
     }
 
@@ -255,6 +272,6 @@ selection_status yahtzee_select_lower_combination(lower_section combination,
 }
 
 bool yahtzee_is_there_unselected_combination(const scorecard_t *card) {
-  return is_there_unselected_upper_combination(card) ||
-         is_there_unselected_lower_combination(card);
+  return yahtzee_is_there_unselected_upper_combination(card) ||
+         yahtzee_is_there_unselected_lower_combination(card);
 }

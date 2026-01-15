@@ -10,8 +10,8 @@ typedef enum { STOP, PLAY, MENU } game_state;
 typedef struct {
   yahtzee_t *yahtzee;
   ui_t *ui;
-  int input;
   game_state state;
+  int input;
 } game_t;
 
 // return a game_t struct allocated on the heap

@@ -1,5 +1,4 @@
 #include "ui.h"
-#include "yahtzee.h"
 
 #define PLAYER_TAB_WIDTH 14
 #define PLAYER_TAB_OFFSET(player) ((player) * PLAYER_TAB_WIDTH)
@@ -7,7 +6,7 @@
 #define MENU_OPTIONS_OFFSET(option) ((option) * MENU_OPTION_WIDTH)
 
 // choose layout base on terminal size
-void choose_appropriate_layout(ui_t *ui) {
+void ui_choose_appropriate_layout(ui_t *ui) {
   int rows, cols;
   getmaxyx(stdscr, rows, cols);
   if ((cols / 2) > rows) {
@@ -21,12 +20,18 @@ static bool is_layout_active(ui_t *ui, layout l) {
   return ui->current_layout == &ui->layout[l];
 }
 
-static void change_player_tab(scores_t *s, int8_t view) {
+void ui_change_player_tab(scores_t *s, int8_t view) {
   s->scorecard_view = view % NUM_PLAYERS;
 }
 
-static void change_player_tab_rotation(scores_t *s) {
-  change_player_tab(s, s->scorecard_view + 1);
+int ui_get_next_player_tab_view(scores_t *s) {
+  ui_change_player_tab(s, s->scorecard_view + 1);
+  return s->scorecard_view;
+}
+
+int ui_get_previous_player_tab_view(scores_t *s) {
+  ui_change_player_tab(s, s->scorecard_view - 1 + NUM_PLAYERS);
+  return s->scorecard_view;
 }
 
 static const char *menu_option_name(menu_option opt) {
@@ -86,17 +91,23 @@ static void del_scores(scores_t *s) {
 }
 
 static void del_layout(layout_t *l) {
+  if (!l)
+    return;
   del_win(&l->title);
   del_field(&l->field);
   del_menu(&l->menu);
   del_scores(&l->scores);
 }
 
-bool is_mouse_inside_window(const WINDOW *win, int x, int y) {
+bool ui_is_mouse_inside_window(const WINDOW *win, int x, int y) {
+  if (!win)
+    return false;
+
   int x1, y1, x2, y2;
-  getyx(win, y1, x1);
+  getbegyx(win, y1, x1);
   getmaxyx(win, y2, x2);
-  return x >= x1 && x <= x2 && y >= y1 && y <= y2;
+
+  return x >= x1 && x <= x2 + x1 && y >= y1 && y <= y2 + y1;
 }
 
 static void build_combination_view(ui_t *ui) {
@@ -121,7 +132,7 @@ static void build_combination_view(ui_t *ui) {
 
   int y = 1;
 
-  for (int i = 0; i < max_visible && i < VIEW_COMBINATION_SIZE; ++i) {
+  for (int i = VIEW_ACES; i < max_visible && i < VIEW_COMBINATION_SIZE; ++i) {
     ui->current_layout->scores.combination_view[i] =
         derwin(parent, row_height, width, y, 1);
 
@@ -259,7 +270,7 @@ static void build_vertical_layout(ui_t *ui, int rows, int cols) {
   box(ui->layout[PORTRAIT].field.roll_button, 0, 0);
 
   /* MENU SECTIONS */
-  for (int i = 0; i < MENU_OPTIONS_SIZE; ++i)
+  for (int i = VIEW_ACES; i < MENU_OPTIONS_SIZE; ++i)
     ui->layout[PORTRAIT].menu.section[i] =
         derwin(ui->layout[PORTRAIT].menu.win, menu_h, cols / MENU_OPTIONS_SIZE,
                0, i * (cols / MENU_OPTIONS_SIZE));
@@ -267,11 +278,25 @@ static void build_vertical_layout(ui_t *ui, int rows, int cols) {
 
 static int sum_upper_combinations(const scorecard_t *card) {
   int sum = 0;
-  for (int i = 0; i < UPPER_SIZE; ++i) {
+  for (int i = ACES; i < UPPER_SIZE; ++i) {
     if (card->upper[i].selected)
       sum += card->upper[i].points;
   }
   return sum;
+}
+
+upper_section ui_combination_view_to_upper_section(combination_view view) {
+  if (view >= VIEW_ACES && view <= VIEW_SIXES)
+    return (upper_section)view;
+
+  return -1;
+}
+
+lower_section ui_combination_view_to_lower_section(combination_view view) {
+  if (view >= VIEW_CHANCE && view <= VIEW_YAHTZEE)
+    return (lower_section)VIEW_CHANCE - view;
+
+  return -1;
 }
 
 static int *get_combination_view_values(ui_t *ui) {
@@ -282,12 +307,13 @@ static int *get_combination_view_values(ui_t *ui) {
   if (!yahtzee_is_there_unselected_upper_combination(&p->card))
     total_upper_combinations = sum_upper_combinations(&p->card);
 
-  for (int i = 0; i < UPPER_SIZE; ++i)
+  for (int i = ACES; i < UPPER_SIZE; ++i)
     values[i] = p->card.upper[i].points;
 
-  for (int i = 0; i < LOWER_SIZE; ++i)
+  for (int i = CHANCE; i < LOWER_SIZE; ++i)
     values[i + VIEW_CHANCE] = p->card.lower[i].points;
 
+  values[VIEW_UPPER_BONUS] = p->card.upper_bonus;
   values[VIEW_TOTAL] = p->total_score;
   return values;
 }
@@ -300,7 +326,7 @@ static void draw_combination_view(ui_t *ui) {
 
   int *values = get_combination_view_values(ui);
 
-  for (int i = 0; i < VIEW_COMBINATION_SIZE; ++i) {
+  for (int i = VIEW_ACES; i < VIEW_COMBINATION_SIZE; ++i) {
     mvwprintw(ui->current_layout->scores.combination_view[i], display_h, 1,
               "%-20s  %4d", combination_view_name(i), values[i]);
   }
@@ -358,32 +384,33 @@ static void refresh_layout(ui_t *ui) {
   doupdate();
 }
 
-click_target_t ui_get_click_target(ui_t *ui, int x, int y) {
-  click_target_t target = {TARGET_NONE, -1};
+ui_target_t ui_pick_target(ui_t *ui, int x, int y) {
+  ui_target_t target = {ELEMENT_NONE, -1};
   layout_t *l = ui->current_layout; // Usa il layout attivo
 
   // 1. Check Roll Button
-  if (is_mouse_inside_window(l->field.roll_button, x, y)) {
-    target.type = TARGET_ROLL_BUTTON;
+  if (ui_is_mouse_inside_window(l->field.roll_button, x, y)) {
+    target.type = ELEMENT_ROLL_BUTTON;
     return target;
   }
 
   // 2. Check Dices
   for (int i = 0; i < NUM_DICES; ++i) {
-    if (is_mouse_inside_window(l->field.dice[i], x, y)) {
-      target.type = TARGET_DICE;
+    if (ui_is_mouse_inside_window(l->field.dice[i], x, y)) {
+      target.type = ELEMENT_DICE;
       target.index = i;
       return target;
     }
   }
 
   // 3. Check Categories (Combination View)
-  for (int i = 0; i < VIEW_COMBINATION_SIZE; ++i) {
+  for (int i = VIEW_ACES; i < VIEW_COMBINATION_SIZE; ++i) {
+    // TODO!!
     // Nota: combination_view[i] potrebbe essere NULL se la finestra è troppo
     // piccola, aggiungere check
     if (l->scores.combination_view[i] &&
-        is_mouse_inside_window(l->scores.combination_view[i], x, y)) {
-      target.type = TARGET_CATEGORY;
+        ui_is_mouse_inside_window(l->scores.combination_view[i], x, y)) {
+      target.type = ELEMENT_CATEGORY;
       target.index = i;
       return target;
     }
@@ -391,8 +418,8 @@ click_target_t ui_get_click_target(ui_t *ui, int x, int y) {
 
   // 4. Check Menu
   for (int i = 0; i < MENU_OPTIONS_SIZE; ++i) {
-    if (is_mouse_inside_window(l->menu.section[i], x, y)) {
-      target.type = TARGET_MENU_OPTION;
+    if (ui_is_mouse_inside_window(l->menu.section[i], x, y)) {
+      target.type = ELEMENT_MENU_OPTION;
       target.index = i;
       return target;
     }
@@ -400,8 +427,8 @@ click_target_t ui_get_click_target(ui_t *ui, int x, int y) {
 
   // 5. Check Player Tabs
   for (int i = 0; i < NUM_PLAYERS; ++i) {
-    if (is_mouse_inside_window(l->scores.player_tab[i], x, y)) {
-      target.type = TARGET_PLAYER_TAB;
+    if (ui_is_mouse_inside_window(l->scores.player_tab[i], x, y)) {
+      target.type = ELEMENT_PLAYER_TAB;
       target.index = i;
       return target;
     }
@@ -425,9 +452,9 @@ ui_t *ui_init(yahtzee_t *y) {
   curs_set(0);
   mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 
-  nodelay(stdscr, TRUE); // getch() will not wait for input
+  timeout(20); // 20 ms -> 50 fps
 
-  choose_appropriate_layout(ui);
+  ui_choose_appropriate_layout(ui);
 
   if (has_colors()) {
     start_color();

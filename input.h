@@ -9,16 +9,14 @@ typedef enum {
   EVENT_QUIT,
   EVENT_RESIZE,
   EVENT_ROLL,
-  EVENT_TOGGLE_DICE,     // require an index
-  EVENT_SELECT_CATEGORY, // require an index (ACES, TWOS...)
-  EVENT_SWITCH_TAB,      // require an index
-  EVENT_MENU_ACTION      // require an index (Help or Quit)
+  EVENT_CLICK,
+  EVENT_HOVER,
 } event_type;
 
 // Struttura che contiene l'evento e dati opzionali (es. quale dado)
 typedef struct {
   event_type type;
-  int index;
+  ui_target_t target;
 } game_event_t;
 
 // Funzione principale per ottenere il prossimo evento

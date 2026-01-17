@@ -42,7 +42,7 @@
 └────────────────────────────┘
 **************************************/
 
-typedef enum { HELP, QUIT, MENU_OPTIONS_SIZE } menu_option;
+typedef enum { MENU_HELP, MENU_QUIT, MENU_OPTIONS_SIZE } menu_option;
 
 typedef enum { LANDSCAPE, PORTRAIT, LAYOUT_SIZE } layout;
 
@@ -66,18 +66,18 @@ typedef enum {
 } combination_view;
 
 typedef enum {
-  TARGET_NONE,
-  TARGET_ROLL_BUTTON,
-  TARGET_DICE,
-  TARGET_CATEGORY,
-  TARGET_MENU_OPTION,
-  TARGET_PLAYER_TAB
-} click_target_type;
+  ELEMENT_NONE,
+  ELEMENT_ROLL_BUTTON,
+  ELEMENT_DICE,        // index
+  ELEMENT_CATEGORY,    // index of the combination_view
+  ELEMENT_MENU_OPTION, // index
+  ELEMENT_PLAYER_TAB,  // index
+} ui_element;
 
 typedef struct {
-  click_target_type type;
-  int index; // Indice del dado (0-4) o della categoria
-} click_target_t;
+  ui_element type;
+  int index; // index of the targeted element. es (0-4) for dice
+} ui_target_t;
 
 typedef struct {
   WINDOW *win;
@@ -109,12 +109,21 @@ typedef struct {
   layout_t layout[LAYOUT_SIZE];
   layout_t *current_layout;
   yahtzee_t *yahtzee;
+
+  ui_target_t hovered_element;
 } ui_t;
 
 ui_t *ui_init(yahtzee_t *y);
-void choose_appropriate_layout(ui_t *ui);
+void ui_choose_appropriate_layout(ui_t *ui);
 void ui_draw(ui_t *ui);
 void ui_free(ui_t **ui);
-click_target_t ui_get_click_target(ui_t *ui, int x, int y);
+bool ui_is_mouse_inside_window(const WINDOW *win, int x, int y);
+ui_target_t ui_pick_target(ui_t *ui, int x, int y);
+void ui_change_player_tab(scores_t *s, int8_t view);
+int ui_get_next_player_tab_view(scores_t *s);
+int ui_get_previous_player_tab_view(scores_t *s);
+upper_section ui_combination_view_to_upper_section(combination_view view);
+lower_section ui_combination_view_to_lower_section(combination_view view);
+int ui_combination_view_to_section(combination_view view);
 
 #endif // UI_H

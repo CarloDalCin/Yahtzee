@@ -16,8 +16,15 @@
 #define LARGE_STRAIGHT_VALUE 40
 #define YAHTZEE_VALUE 50
 #define YAHTZEE_BONUS_VALUE 100
+#define UPPER_BONUS_TRESHHOLD 63
+#define UPPER_BONUS_VALUE 35
 
 typedef enum { UNSELECTED, SELECTED } selection_status;
+
+typedef enum {
+  END_GAME = false,
+  NEXT_TURN = true,
+} turn_status;
 
 /* ---------- Point Section ---------- */
 
@@ -82,15 +89,16 @@ void yahtzee_free(yahtzee_t **y);
 void yahtzee_roll_dices(yahtzee_t *y);
 void yahtzee_hold_dice(bool *dice_s);
 void yahtzee_release_dice(bool *dice_s);
-void yahtzee_change_turn(yahtzee_t *y);
-bool yahtzee_end_game(yahtzee_t *y);
+void yahtzee_toggle_dice(dice_t *dice, int index);
+turn_status yahtzee_change_turn(yahtzee_t *y);
+void yahtzee_end_game(yahtzee_t *y);
 
 // puts the value of a specific combination (obtained from the dices) in the
 // scorecard
-selection_status yahtzee_select_upper_combination(upper_section combination,
-                                                  yahtzee_t *y);
-selection_status yahtzee_select_lower_combination(lower_section combination,
-                                                  yahtzee_t *y);
+selection_status yahtzee_select_upper_combination(yahtzee_t *y,
+                                                  upper_section combination);
+selection_status yahtzee_select_lower_combination(yahtzee_t *y,
+                                                  lower_section combination);
 bool yahtzee_is_there_unselected_upper_combination(const scorecard_t *card);
 bool yahtzee_is_there_unselected_lower_combination(const scorecard_t *card);
 bool yahtzee_is_there_unselected_combination(const scorecard_t *card);

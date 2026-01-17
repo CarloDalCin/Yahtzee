@@ -10,6 +10,7 @@ yahtzee_t *yahtzee_init(void) {
   y->attempts = 3;
   y->active_player = 0;
 
+  srand(time(NULL));
   return y;
 }
 
@@ -45,7 +46,6 @@ static int repetition(const dice_t *d, uint8_t search_val) {
 }
 
 void yahtzee_roll_dices(yahtzee_t *y) {
-  srand(time(NULL));
   while (y->attempts > 0) {
     for (int i = 0; i < NUM_DICES; ++i) {
       if (!y->dice[i].selected)
@@ -55,13 +55,48 @@ void yahtzee_roll_dices(yahtzee_t *y) {
   }
 }
 
+static int get_total_score(const scorecard_t *card) {
+  int total = 0;
+  for (int i = 0; i < UPPER_SIZE; ++i)
+    total += card->upper[i].points;
+  for (int i = 0; i < LOWER_SIZE; ++i)
+    total += card->lower[i].points;
+  return total;
+}
+
+static int get_upper_section_score(const scorecard_t *card) {
+  int total = 0;
+  for (int i = ACES; i < UPPER_SIZE; ++i)
+    total += card->upper[i].points;
+  return total;
+}
+
+void yahtzee_end_game(yahtzee_t *y) {
+  for (int i = 0; i < NUM_PLAYERS; ++i) {
+    y->player[i].upper_section_score =
+        get_upper_section_score(&y->player[i].card) >= UPPER_BONUS_TRESHHOLD
+            ? UPPER_BONUS_VALUE
+            : 0;
+    y->player[i].total_score = get_total_score(&y->player[i].card);
+  }
+}
+
 void yahtzee_hold_dice(bool *dice_s) { *dice_s = SELECTED; }
 void yahtzee_release_dice(bool *dice_s) { *dice_s = UNSELECTED; }
 
-void yahtzee_change_turn(yahtzee_t *y) {
-  y->active_player = (y->active_player + 1) % NUM_PLAYERS;
-  reset_dices(y->dice);
-  reset_attempts(y);
+turn_status yahtzee_change_turn(yahtzee_t *y) {
+  turn_status status = (turn_status)yahtzee_is_there_unselected_combination(
+      &y->player[y->active_player].card);
+
+  if (status == NEXT_TURN) {
+    y->active_player = (y->active_player + 1) % NUM_PLAYERS;
+    reset_dices(y->dice);
+    reset_attempts(y);
+  } else if (status == END_GAME) {
+    yahtzee_end_game(y);
+  }
+
+  return status;
 }
 
 /* ---------- Game logic ---------- */
@@ -158,24 +193,6 @@ static int get_yahtzee(const dice_t *d) {
   return 0;
 }
 
-static int get_total_score(const scorecard_t *card) {
-  int total = 0;
-  for (int i = 0; i < UPPER_SIZE; ++i)
-    total += card->upper[i].points;
-  for (int i = 0; i < LOWER_SIZE; ++i)
-    total += card->lower[i].points;
-  return total;
-}
-
-bool yahtzee_end_game(yahtzee_t *y) {
-  if (yahtzee_is_there_unselected_combination(
-          &y->player[y->active_player].card))
-    return false;
-  y->player[y->active_player].total_score =
-      get_total_score(&y->player[y->active_player].card);
-  return true;
-}
-
 // return true if there is at least one unselected upper combination
 bool yahtzee_is_there_unselected_upper_combination(const scorecard_t *card) {
   for (int i = 0; i < UPPER_SIZE; ++i) {
@@ -206,8 +223,8 @@ static void add_joker_bonus(yahtzee_t *y) {
   y->player[y->active_player].card.yahtzee_bonus += YAHTZEE_BONUS_VALUE;
 }
 
-selection_status yahtzee_select_upper_combination(upper_section combination,
-                                                  yahtzee_t *y) {
+selection_status yahtzee_select_upper_combination(yahtzee_t *y,
+                                                  upper_section combination) {
   scorecard_t *card = &y->player[y->active_player].card;
 
   upper_section forced_upper = (upper_section)(y->dice[0].value - 1);
@@ -225,8 +242,8 @@ selection_status yahtzee_select_upper_combination(upper_section combination,
   return UNSELECTED;
 }
 
-selection_status yahtzee_select_lower_combination(lower_section combination,
-                                                  yahtzee_t *y) {
+selection_status yahtzee_select_lower_combination(yahtzee_t *y,
+                                                  lower_section combination) {
   scorecard_t *card = &y->player[y->active_player].card;
   uint8_t *points = &card->lower[combination].points;
   dice_t *d = y->dice;
@@ -274,4 +291,12 @@ selection_status yahtzee_select_lower_combination(lower_section combination,
 bool yahtzee_is_there_unselected_combination(const scorecard_t *card) {
   return yahtzee_is_there_unselected_upper_combination(card) ||
          yahtzee_is_there_unselected_lower_combination(card);
+}
+
+void yahtzee_toggle_dice(dice_t *dice, int index) {
+  if (dice[index].selected == SELECTED) {
+    dice[index].selected = UNSELECTED;
+  } else {
+    dice[index].selected = SELECTED;
+  }
 }

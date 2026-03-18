@@ -437,6 +437,77 @@ ui_target_t ui_pick_target(ui_t *ui, int x, int y) {
   return target;
 }
 
+static void init_color_pairs(ui_t *ui) {
+  if (has_colors()) {
+    start_color();
+    use_default_colors();
+  }
+
+  init_pair(CP_DEFAULT, COLOR_WHITE, COLOR_BLACK);
+  init_pair(CP_SELECTED, COLOR_WHITE, COLOR_BLUE);
+  init_pair(CP_HOVER, COLOR_WHITE, COLOR_CYAN);
+  init_pair(CP_TITLE, COLOR_MAGENTA, -1);
+}
+
+static void color_layout(ui_t *ui) {
+  int idx = ui->hovered_element.index;
+  switch (ui->hovered_element.type) {
+  case ELEMENT_NONE:
+    break;
+  case ELEMENT_ROLL_BUTTON:
+    wattron(ui->current_layout->field.roll_button, COLOR_PAIR(CP_HOVER));
+    break;
+  case ELEMENT_DICE:
+    wattron(ui->current_layout->field.dice[idx], COLOR_PAIR(CP_HOVER));
+    break;
+  case ELEMENT_CATEGORY:
+    wattron(ui->current_layout->scores.combination_view[idx],
+            COLOR_PAIR(CP_HOVER));
+    break;
+  case ELEMENT_MENU_OPTION:
+    wattron(ui->current_layout->menu.section[idx], COLOR_PAIR(CP_HOVER));
+    break;
+  case ELEMENT_PLAYER_TAB:
+    wattron(ui->current_layout->scores.player_tab[idx], COLOR_PAIR(CP_HOVER));
+    break;
+  }
+
+  wattron(ui->current_layout->title, COLOR_PAIR(CP_TITLE));
+
+  for (int i = 0; i < NUM_PLAYERS; ++i) {
+    if (i == ui->yahtzee->active_player) {
+      wattron(ui->current_layout->scores.player_tab[i],
+              COLOR_PAIR(CP_SELECTED));
+    }
+  }
+
+  for (int i = 0; i < NUM_DICES; ++i) {
+    if (ui->yahtzee->dice[i].selected == SELECTED) {
+      wattron(ui->current_layout->field.dice[i], COLOR_PAIR(CP_SELECTED));
+    }
+  }
+}
+
+void ui_roll_animation(ui_t *ui) {
+  int rows, cols;
+  const int SIDE = 3;
+  getmaxyx(ui->current_layout->field.win, rows, cols);
+
+  for (int i = 0; i < NUM_DICES; ++i) {
+    if (ui->yahtzee->dice[i].selected == SELECTED) {
+      del_win(&ui->current_layout->field.dice[i]);
+      // TODO refresh only the dices
+      ui_draw(ui);
+
+      ui->current_layout->field.dice[i] =
+          derwin(ui->current_layout->field.win, rows + i * SIDE + 1,
+                 cols + i * SIDE + 1, SIDE, SIDE);
+      box(ui->current_layout->field.dice[i], 0, 0);
+      ui_draw(ui);
+    }
+  }
+}
+
 ui_t *ui_init(yahtzee_t *y) {
   ui_t *ui = malloc(sizeof(ui_t));
 
@@ -452,14 +523,10 @@ ui_t *ui_init(yahtzee_t *y) {
   curs_set(0);
   mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 
-  timeout(20); // 20 ms -> 50 fps
+  timeout(25); // 25 ms -> 40 fps
 
   ui_choose_appropriate_layout(ui);
-
-  if (has_colors()) {
-    start_color();
-    use_default_colors();
-  }
+  init_color_pairs(ui);
 
   refresh();
 
@@ -471,6 +538,7 @@ void ui_draw(ui_t *ui) {
   getmaxyx(stdscr, rows, cols);
 
   build_layout(ui, rows, cols);
+  color_layout(ui);
   draw_layout(ui);
   refresh_layout(ui);
 }

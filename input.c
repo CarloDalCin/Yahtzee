@@ -41,8 +41,7 @@ game_event_t input_get_event(ui_t *ui) {
     // Roll dices
   case 'r':
   case 'R':
-    event.type = EVENT_CLICK;
-    event.target.type = ELEMENT_ROLL_BUTTON;
+    event.type = EVENT_ROLL;
     break;
 
     // Select dice

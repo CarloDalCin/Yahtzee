@@ -225,6 +225,8 @@ static void add_joker_bonus(yahtzee_t *y) {
 
 selection_status yahtzee_select_upper_combination(yahtzee_t *y,
                                                   upper_section combination) {
+  if (y->attempts == NUM_ATTEMPTS)
+    return UNSELECTED;
   scorecard_t *card = &y->player[y->active_player].card;
 
   upper_section forced_upper = (upper_section)(y->dice[0].value - 1);
@@ -244,6 +246,8 @@ selection_status yahtzee_select_upper_combination(yahtzee_t *y,
 
 selection_status yahtzee_select_lower_combination(yahtzee_t *y,
                                                   lower_section combination) {
+  if (y->attempts == NUM_ATTEMPTS)
+    return UNSELECTED;
   scorecard_t *card = &y->player[y->active_player].card;
   uint8_t *points = &card->lower[combination].points;
   dice_t *d = y->dice;

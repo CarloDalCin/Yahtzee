@@ -74,6 +74,13 @@ typedef enum {
   ELEMENT_PLAYER_TAB,  // index
 } ui_element;
 
+typedef enum {
+  CP_DEFAULT,
+  CP_SELECTED,
+  CP_HOVER,
+  CP_TITLE,
+} color_pair;
+
 typedef struct {
   ui_element type;
   int index; // index of the targeted element. es (0-4) for dice
@@ -109,7 +116,6 @@ typedef struct {
   layout_t layout[LAYOUT_SIZE];
   layout_t *current_layout;
   yahtzee_t *yahtzee;
-
   ui_target_t hovered_element;
 } ui_t;
 
@@ -125,5 +131,6 @@ int ui_get_previous_player_tab_view(scores_t *s);
 upper_section ui_combination_view_to_upper_section(combination_view view);
 lower_section ui_combination_view_to_lower_section(combination_view view);
 int ui_combination_view_to_section(combination_view view);
+void ui_roll_animation(ui_t *ui);
 
 #endif // UI_H

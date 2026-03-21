@@ -45,10 +45,10 @@ void game_loop(game_t *g) {
 
     case EVENT_ROLL:
       // Roll unselected dices
-      yahtzee_roll_dices(g->yahtzee);
+      ui_roll_animation(g->ui);
       break;
 
-    case EVENT_CLICK:
+    case EVENT_CLICK: {
       // Qui gestisci l'azione vera e propria in base al target
       switch (ev.target.type) {
       case ELEMENT_NONE:
@@ -56,7 +56,7 @@ void game_loop(game_t *g) {
 
       case ELEMENT_ROLL_BUTTON:
         // Roll unselected dices
-        yahtzee_roll_dices(g->yahtzee);
+        ui_roll_animation(g->ui);
         break;
 
       case ELEMENT_DICE:
@@ -118,6 +118,7 @@ void game_loop(game_t *g) {
         break;
       }
       break;
+    } // EVENT_CLICK
 
     case EVENT_HOVER:
       // update hovered element for the next frame

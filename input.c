@@ -2,6 +2,7 @@
 #include "ui.h"
 
 game_event_t input_get_event(ui_t *ui) {
+
   game_event_t event = {EVENT_NONE, {ELEMENT_NONE, -1}};
   int ch = getch();
 

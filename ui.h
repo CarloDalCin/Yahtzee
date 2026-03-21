@@ -75,7 +75,7 @@ typedef enum {
 } ui_element;
 
 typedef enum {
-  CP_DEFAULT,
+  CP_DEFAULT = 1,
   CP_SELECTED,
   CP_HOVER,
   CP_TITLE,

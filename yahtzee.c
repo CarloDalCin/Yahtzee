@@ -46,7 +46,7 @@ static int repetition(const dice_t *d, uint8_t search_val) {
 }
 
 void yahtzee_roll_dices(yahtzee_t *y) {
-  while (y->attempts > 0) {
+  if (y->attempts > 0) {
     for (int i = 0; i < NUM_DICES; ++i) {
       if (!y->dice[i].selected)
         y->dice[i].value = rand() % 6 + 1;
